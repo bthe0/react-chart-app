@@ -1,25 +1,47 @@
-import logo from './logo.svg';
+import React, { useEffect, useState } from "react";
 import './App.css';
+import Chart from './components/Chart';
+import ChartFilters from './components/ChartFilters';
+import { useQuery } from 'react-query';
+import { getCampaigns, getDataSources, getStats } from "./queries";
 
-function App() {
+const useStatsData = () => {
+    const [filters, setFilters] = useState({});
+    const [stats, setStats] = useState();
+    const { data, isLoading } = useQuery(getStats(filters));
+
+    useEffect(() => {
+        if (data) {
+            setStats(data);
+        }
+    }, [filters, data]);
+
+    const filter = (filters = {}) => {
+        setFilters(filters);
+    };
+
+    return {
+        isLoading,
+        filter,
+        filters,
+        data: stats
+    };
+};
+
+export default () => {
+  const campaigns = useQuery(getCampaigns);
+  const dataSources = useQuery(getDataSources);
+  const stats = useStatsData();
+  const isLoading = [campaigns, dataSources].find(entry => entry.isLoading);
+
+  if (isLoading) {
+      return <p>Loading...</p>;
+  }
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+      <>
+        <ChartFilters onFilter={stats.filter} campaigns={campaigns.data} dataSources={dataSources.data} />
+        <Chart data={stats.data} />
+      </>
   );
-}
-
-export default App;
+};
